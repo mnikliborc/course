@@ -63,7 +63,12 @@ the contents of c
 main ::
   IO ()
 main =
-  error "todo"
+  do
+    args <- getArgs
+    case args of
+      Nil    -> putStrLn "dupa"
+      (h:._) -> run h
+
 
 type FilePath =
   Chars
@@ -72,31 +77,40 @@ type FilePath =
 run ::
   Chars
   -> IO ()
-run =
-  error "todo"
+run path =
+  do 
+    fnamesContent <- readFile path
+    filenames <- pure (lines fnamesContent)
+    files <- getFiles filenames
+    printFiles files 
+
 
 getFiles ::
   List FilePath
   -> IO (List (FilePath, Chars))
-getFiles =
-  error "todo"
+getFiles files =
+  sequence (getFile <$> files)
+
 
 getFile ::
   FilePath
   -> IO (FilePath, Chars)
-getFile =
-  error "todo"
+getFile path =
+  (<$>) (\chars -> (path, chars)) (readFile path)
 
 printFiles ::
   List (FilePath, Chars)
   -> IO ()
-printFiles =
-  error "todo"
+printFiles list =
+  --(const ()) <$> (sequence ((\x -> printFile (fst x) (snd x)) <$> list))
+  void (sequence ((\(q, c) -> printFile q c) <$> list))
 
 printFile ::
   FilePath
   -> Chars
   -> IO ()
-printFile =
-  error "todo"
+printFile path content =
+  do 
+    putStrLn ("============ " ++ path)
+    putStrLn content
 

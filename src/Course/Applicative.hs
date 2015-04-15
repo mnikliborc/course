@@ -19,6 +19,21 @@ import Course.List
 import Course.Optional
 import qualified Prelude as P
 
+{-class Semigroup e where
+  (<>) :: e -> e -> e
+  -- must be associative
+
+class Semigroup e => Monoid e where
+  zero :: e
+
+data WebFormV e a=
+  Fail e
+  | Succ a
+
+instance Semigroup e => Apply (WebFormV e) where
+  -- (<*>) :: WebFormV e (a -> b) -> WebFormV e a -> WebformV e b
+  Fail e1 <*> Fail e2 = Fail (e1 <> e2)
+-}
 -- | All instances of the `Applicative` type-class must satisfy two laws. These
 -- laws are not checked by the compiler. These laws are given as:
 --
@@ -46,8 +61,8 @@ class Apply f => Applicative f where
   (a -> b)
   -> f a
   -> f b
-(<$>) =
-  error "todo"
+(<$>) f fa =
+  (pure f) <*> fa
 
 -- | Insert into Id.
 --
@@ -57,7 +72,7 @@ instance Applicative Id where
     a
     -> Id a
   pure =
-    error "todo"
+    Id
 
 -- | Insert into a List.
 --
@@ -66,8 +81,8 @@ instance Applicative List where
   pure ::
     a
     -> List a
-  pure =
-    error "todo"
+  pure x =
+    x :. Nil
 
 -- | Insert into an Optional.
 --
@@ -77,7 +92,7 @@ instance Applicative Optional where
     a
     -> Optional a
   pure =
-    error "todo"
+    Full
 
 -- | Insert into a constant function.
 --
@@ -86,8 +101,11 @@ instance Applicative ((->) t) where
   pure ::
     a
     -> ((->) t a)
-  pure =
-    error "todo"
+    -- a -> t -> a
+  pure x _ =
+    x
+  -- pure = 
+  --const
 
 -- | Sequences a list of structures to a structure of list.
 --
@@ -110,7 +128,11 @@ sequence ::
   List (f a)
   -> f (List a)
 sequence =
-  error "todo"
+  --foldRight (\fa r -> (lift2 fa) :. r) Nil l
+  foldRight (lift2 (:.)) (pure Nil)
+
+  -- f a -> f (List a) -> f (List a)
+  --   a ->    List a  ->    List a    ----- it's :.
 
 -- | Replicate an effect a given number of times.
 --
