@@ -213,12 +213,60 @@ showDigit Eight =
 showDigit Nine =
   "nine"
 
+showDigitTens ::
+  Digit
+  -> Chars
+showDigitTens Zero =
+  ""
+showDigitTens One =
+  "ten"
+showDigitTens Two =
+  "twenty"
+showDigitTens Three =
+  "thirty"
+showDigitTens Four =
+  "forty"
+showDigitTens Five =
+  "fifty"
+showDigitTens Six =
+  "sixty"
+showDigitTens Seven =
+  "seventy"
+showDigitTens Eight =
+  "eighty"
+showDigitTens Nine =
+  "ninety"
+
+showDigitTeens ::
+  Digit
+  -> Chars
+showDigitTeens Zero =
+  "ten"
+showDigitTeens One =
+  "eleven"
+showDigitTeens Two =
+  "twelve"
+showDigitTeens Three =
+  "thirteen"
+showDigitTeens Four =
+  "forteen"
+showDigitTeens Five =
+  "fifteen"
+showDigitTeens Six =
+  "sixteen"
+showDigitTeens Seven =
+  "seventeen"
+showDigitTeens Eight =
+  "eighteen"
+showDigitTeens Nine =
+  "nineteen"
+
 -- A data type representing one, two or three digits, which may be useful for grouping.
 data Digit3 =
   D1 Digit
   | D2 Digit Digit
   | D3 Digit Digit Digit
-  deriving Eq
+  deriving (Eq)
 
 -- Possibly convert a character to a digit.
 fromChar ::
@@ -323,5 +371,96 @@ fromChar _ =
 dollars ::
   Chars
   -> Chars
-dollars =
-  error "todo"
+dollars cs =
+  (unitsString cs) ++ " and " ++ (centsString cs)
+
+unitsString :: Chars -> Chars
+unitsString cs =
+  (mkString " " (reverse (map toIllionNumber (tripletsWithIllions cs)))) ++ "dollars"
+
+centsString :: Chars -> Chars
+centsString cs =
+  (mkString "" (map toNumber (triplets . centDigits $ cs))) ++ " cents"  
+
+mkString :: Chars -> List Chars -> Chars
+mkString _ Nil =
+  ""
+mkString _ (h :. Nil) =
+  h
+mkString j (h :. t) =
+  h ++ j ++ (mkString j t)
+
+toIllionNumber :: (Digit3, Chars) -> Chars
+toIllionNumber (d, i) =
+  toNumber(d) ++ " " ++ i
+
+tripletsWithIllions :: Chars -> List (Digit3, Chars)
+tripletsWithIllions cs = 
+  filter (\(t, _) -> t /= (D3 Zero Zero Zero)) (zip (triplets . reverse . unitDigits $ cs) illion)
+
+toNumber :: Digit3 -> Chars
+toNumber (D3 Zero d2 d1) = toNumber (D2 d2 d1)
+toNumber (D3 d3 Zero Zero) = (showDigit d3) ++ " hundred"
+toNumber (D3 d3 d2 d1) = (showDigit d3) ++ " hundred and " ++ toNumber (D2 d2 d1)
+toNumber (D2 Zero d1) = showDigit d1
+toNumber (D2 One d1) = showDigitTeens d1
+toNumber (D2 d2 Zero) = (showDigitTens d2)
+toNumber (D2 d2 d1) = (showDigitTens d2) ++ "-" ++ (showDigit d1)
+toNumber (D1 a) = showDigit a
+
+toDigits :: Chars -> List Digit
+toDigits cs =
+  flattenOptional (map fromChar cs)
+
+flattenOptional :: List (Optional a) -> List a
+flattenOptional (Empty :. cs) =
+  flattenOptional cs
+flattenOptional ((Full c) :. cs) =
+  c :. flattenOptional cs
+flattenOptional Nil = Nil
+
+isFull :: Optional a -> Bool
+isFull Empty = False
+isFull (Full _) = True
+
+triplets :: List Digit -> List Digit3
+triplets (d1 :. d2 :. d3 :. ds) =   
+  (D3 d3 d2 d1) :. (triplets ds)
+triplets (d1 :. d2 :. Nil) = 
+  (D2 d2 d1) :. Nil
+triplets (d1 :. Nil) = 
+  (D1 d1) :. Nil
+triplets Nil = 
+  Nil
+
+unitDigits :: Chars -> List Digit
+unitDigits = 
+  padUnits0 . toDigits . units
+
+units :: Chars -> Chars
+units = 
+  takeWhile (\c -> c /= '.')
+
+padUnits0 :: List Digit -> List Digit
+padUnits0 Nil = Zero :. Nil
+padUnits0 ds = ds 
+
+cents :: Chars -> Chars
+cents = 
+  (drop 1) . dropWhile (\c -> c /= '.')
+
+centDigits :: Chars -> List Digit
+centDigits = 
+  reverse . padCents0 . (take 2) . toDigits . cents
+
+padCents0 :: List Digit -> List Digit
+padCents0 (c1 :. c2 :. cs) = c1 :. c2 :. cs
+padCents0 (c :. Nil) = c :. Zero :. Nil
+padCents0 Nil = Zero :. Zero :. Nil
+
+
+
+
+
+
+
